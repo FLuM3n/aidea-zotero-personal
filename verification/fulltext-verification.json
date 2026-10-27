@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "checks": [
+    "real 79-page paper: figure questions, page-specific questions and follow-ups retain every extracted chunk unchanged; old figure-only routing reproduced",
+    "insufficient capacity and missing text fail explicitly; incomplete extraction and old excerpt conversations are labelled honestly",
+    "actual request preparation includes all paper text with or without a scanned page; figure/page metadata cannot narrow text",
+    "paper text is reserved before long conversation history; final request fits its configured input budget without dropping PDF chunks",
+    "unequal-sized simultaneous PDFs each receive their whole text instead of an equal share that clips the larger paper",
+    "oversize paper is rejected before any history-summary request instead of silently sending excerpts",
+    "final overflow guard cannot delete PDF reference blocks even if an upstream cost estimate is too small",
+    "scanned page description is ordinary reference context with no image-first instruction; page mapping is preserved"
+  ],
+  "paper": {
+    "pages": 79,
+    "chunks": 79,
+    "characters": 291432,
+    "fullTextReservedTokens": 94206
+  },
+  "liveApiTest": false,
+  "liveZoteroTest": false
+}

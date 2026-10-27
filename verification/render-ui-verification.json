@@ -1,0 +1,140 @@
+{
+  "passed": true,
+  "checks": [
+    "scanning page number and successful page 70 status are visible on the same row as the PDF reference",
+    "another scan replaces the pending page and never accumulates images",
+    "clicking the inline image monitor removes the pending image",
+    "GPT-6.1 Terra is recognized as vision-capable; text-only models are blocked",
+    "render failure and its reason are shown inline beside PDF, without a false success state",
+    "monitor survives native PDF-chip rebuild; injected styles suppress the icon black rectangle despite stale external CSS",
+    "no page input, quality dropdown, expanded picker or large image preview; 20 layouts fit",
+    "request contains exactly one real page image and clears checkmark after sending",
+    "conversation switching and cancellation cannot attach a late image",
+    "broom clear cancels scanning and resets the inline monitor"
+  ],
+  "layoutCases": [
+    {
+      "width": 220,
+      "scale": 1,
+      "dark": false,
+      "passed": true
+    },
+    {
+      "width": 220,
+      "scale": 1,
+      "dark": true,
+      "passed": true
+    },
+    {
+      "width": 220,
+      "scale": 1.5,
+      "dark": false,
+      "passed": true
+    },
+    {
+      "width": 220,
+      "scale": 1.5,
+      "dark": true,
+      "passed": true
+    },
+    {
+      "width": 260,
+      "scale": 1,
+      "dark": false,
+      "passed": true
+    },
+    {
+      "width": 260,
+      "scale": 1,
+      "dark": true,
+      "passed": true
+    },
+    {
+      "width": 260,
+      "scale": 1.5,
+      "dark": false,
+      "passed": true
+    },
+    {
+      "width": 260,
+      "scale": 1.5,
+      "dark": true,
+      "passed": true
+    },
+    {
+      "width": 320,
+      "scale": 1,
+      "dark": false,
+      "passed": true
+    },
+    {
+      "width": 320,
+      "scale": 1,
+      "dark": true,
+      "passed": true
+    },
+    {
+      "width": 320,
+      "scale": 1.5,
+      "dark": false,
+      "passed": true
+    },
+    {
+      "width": 320,
+      "scale": 1.5,
+      "dark": true,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "scale": 1,
+      "dark": false,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "scale": 1,
+      "dark": true,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "scale": 1.5,
+      "dark": false,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "scale": 1.5,
+      "dark": true,
+      "passed": true
+    },
+    {
+      "width": 600,
+      "scale": 1,
+      "dark": false,
+      "passed": true
+    },
+    {
+      "width": 600,
+      "scale": 1,
+      "dark": true,
+      "passed": true
+    },
+    {
+      "width": 600,
+      "scale": 1.5,
+      "dark": false,
+      "passed": true
+    },
+    {
+      "width": 600,
+      "scale": 1.5,
+      "dark": true,
+      "passed": true
+    }
+  ],
+  "engine": "Local Zotero app/omni.ja resource/reader/pdf",
+  "liveApiTest": false,
+  "liveZoteroTest": false
+}

@@ -1,0 +1,18 @@
+
+#llm-scan-current-page { appearance: none; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 28px; width: 28px; height: 28px; min-width: 28px; min-height: 28px; padding: 0; border: 0; background: transparent; color: var(--fill-primary, #555); cursor: pointer; }
+#llm-scan-current-page::before, #llm-scan-current-page::after { display: none !important; content: none !important; width: 0 !important; height: 0 !important; background: none !important; mask-image: none !important; }
+#llm-scan-current-page svg { display: block; flex: 0 0 20px; width: 20px; height: 20px; pointer-events: none; }
+#llm-scan-current-page[aria-pressed="true"] { color: var(--color-accent, #287d59); }
+#llm-scan-current-page[aria-busy="true"] { opacity: .55; cursor: progress; }
+.llm-paper-context-chip.llm-paper-with-image-monitor { width: 100% !important; max-width: 100% !important; min-width: 0; flex: 1 1 100%; }
+.llm-paper-with-image-monitor > .llm-paper-context-chip-header { display: flex; flex-wrap: nowrap; align-items: center; gap: 5px; min-width: 0; width: 100% !important; box-sizing: border-box; }
+.llm-paper-with-image-monitor .llm-paper-context-chip-label { flex: 1 1 0; min-width: 0; max-width: none; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.llm-paper-with-image-monitor .llm-paper-context-clear { flex: 0 0 auto; }
+#llm-image-monitor { appearance: none; display: inline-block; flex: 0 0 auto; max-width: none; min-width: 0; min-height: 0; height: auto; max-height: none; width: auto; margin: 0 0 0 auto; padding: 1px 0 1px 6px; border: 0; border-radius: 0; background: transparent; box-shadow: none; color: var(--fill-secondary, #666); font: inherit; font-size: 11px; line-height: 1.5; white-space: nowrap; overflow: visible; text-overflow: clip; cursor: pointer; }
+#llm-image-monitor[data-phase="ready"] { color: var(--color-accent, #287d59); font-weight: 600; }
+#llm-image-monitor[data-phase="scanning"] { color: #986400; }
+#llm-image-monitor[data-phase="error"] { color: #b83232; flex: 0 1 65%; max-width: 65%; white-space: normal; overflow-wrap: anywhere; text-align: left; }
+.llm-image-monitor-fallback { display: flex; justify-content: flex-end; width: 100%; min-width: 0; }
+.llm-image-monitor-fallback #llm-image-monitor { max-width: 100%; }
+.llm-image-monitor-fallback[hidden] { display: none !important; }
+.llm-quick-vision-host .llm-image-preview { display: none !important; }

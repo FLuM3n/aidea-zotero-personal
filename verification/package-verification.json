@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "version": "3.6.1.9",
+  "sha256": "7466023499f51f7d15334d0021071a523e377c5bd22a209b77eb9a873f9f50ba",
+  "bytes": 1720429,
+  "changedFiles": [
+    "content/scripts/aidea.js",
+    "manifest.json"
+  ],
+  "zipIntegrityPassed": true,
+  "liveZoteroTest": false,
+  "liveApiTest": false
+}

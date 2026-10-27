@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "checks": [
+    "original helper reproduces the exact getViewport error with a wrapped PDF page",
+    "wrapped page, viewport and render task are unwrapped; completion is awaited before image extraction",
+    "Components.utils.waiveXrays handles objects without a wrappedJSObject property",
+    "visible page view provides a fallback proxy for the same physical page",
+    "missing page or render completion produces a clear failure instead of false success",
+    "cancellation during page loading prevents rendering and image attachment"
+  ],
+  "simulatedXrayBoundary": true,
+  "liveZoteroTest": false
+}

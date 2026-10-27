@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "fileCount": 473,
+  "totalBytes": 11549705,
+  "credentialPatternMatches": 0,
+  "includesUserPapers": false,
+  "includesChatDatabase": false,
+  "version": "3.6.1.9",
+  "changedPluginFiles": [
+    "content/scripts/aidea.js",
+    "content/zoteroPane.css",
+    "manifest.json"
+  ]
+}

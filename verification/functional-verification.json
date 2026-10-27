@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "checks": [
+    "page ranges, full-width digits, deduplication, PDF bounds and six-page cap",
+    "known text-only models blocked; unknown custom models remain configurable",
+    "only selected pages rendered, resolution bounded, page labels present, canvases released",
+    "selected page-to-image mapping included in prompt and remains stable for retries",
+    "cancellation interrupts rendering without adding partial images",
+    "PDF resolved from matching reader; a different paper is rejected",
+    "actual Chat Completions image_url and Responses input_image payloads contain exactly the selected images",
+    "real send controller passes page images and labels, sends once, preserves images on unsupported model, supports image-only question",
+    "send is blocked during page rendering",
+    "loading history cannot silently restore and resend selected PDF page images",
+    "explicit page mode excludes old generated images on send, edit and retry; draft metadata persists; AbortController fix retained",
+    "PDF.js viewport and render options can be created in the reader iframe realm",
+    "ready primary PDF is usable when another view has an unresolved initialization promise",
+    "fallback reader lookup and nested PDF iframe resolve physical page 12 correctly"
+  ],
+  "liveApiTest": false,
+  "liveZoteroTest": false
+}
