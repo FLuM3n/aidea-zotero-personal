@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "version": "3.6.1.11",
+  "checks": [
+    "Opening a PDF does not invoke selection translation",
+    "PDF selections use the selected text without a cold-start request",
+    "Streaming translation and EPUB retrieval fallback are preserved",
+    "Local Gemini provider preset and user context override work",
+    "Text, conversation history and image input match gemcli request schemas",
+    "Published installation package matches every plugin file"
+  ],
+  "liveGeminiGenerationTest": false,
+  "liveZoteroTest": false
+}
