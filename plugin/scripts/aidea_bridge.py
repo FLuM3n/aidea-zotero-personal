@@ -49,6 +49,9 @@ def _ensure_loopback_no_proxy(env):
     return env
 
 
+AIDEA_PROGRESS_HOOK = '"""Loaded by the translation subprocess\'s existing sitecustomize hook."""\nimport json as _aidea_json\nimport sys as _aidea_sys\ntry:\n    import babeldoc.main as _aidea_main\n    _aidea_original_handler = _aidea_main.create_progress_handler\n\n    def _aidea_create_progress_handler(*args, **kwargs):\n        context, original = _aidea_original_handler(*args, **kwargs)\n\n        def handler(event):\n            if isinstance(event, dict) and event.get(\'type\') in {\'progress_start\', \'progress_update\', \'progress_end\'}:\n                # Whitelist counters only; never print prompts or translated text.\n                fields = (\'type\', \'stage\', \'overall_progress\', \'stage_progress\',\n                          \'stage_current\', \'stage_total\', \'part_index\', \'total_parts\')\n                payload = {key: event[key] for key in fields if key in event}\n                print(\'AIDEA_PROGRESS \' + _aidea_json.dumps(payload, ensure_ascii=True), file=_aidea_sys.stderr, flush=True)\n            return original(event)\n\n        return context, handler\n\n    _aidea_main.create_progress_handler = _aidea_create_progress_handler\nexcept Exception as _aidea_error:\n    print(\'[aidea_bridge] Structured progress unavailable: \' + type(_aidea_error).__name__, file=_aidea_sys.stderr, flush=True)\n'
+
+
 def _prepare_pdf2zh_runtime_env():
     """
     Build a subprocess env for pdf2zh_next that injects a sitecustomize patch.
@@ -100,6 +103,7 @@ def _prepare_pdf2zh_runtime_env():
         "except Exception as _err:\n"
         "    print(f'[aidea_bridge] BabelDOC fallback compatibility patch skipped: {_err}', file=sys.stderr, flush=True)\n"
     )
+    patch_code += "\n" + AIDEA_PROGRESS_HOOK
     with open(sitecustomize_path, "w", encoding="utf-8") as f:
         f.write(patch_code)
 
@@ -128,11 +132,52 @@ def _log_runtime_package_versions(log_line):
 
 
 def write_progress(path, data):
-    """Atomic write: write to .tmp then rename."""
-    tmp = path + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False)
-    os.replace(tmp, path)
+    """Best-effort UI telemetry: a Windows reader must never abort translation.
+
+    Gecko can briefly open progress.json without FILE_SHARE_DELETE. Retry an
+    atomic replace with a unique temporary name, then skip an intermediate
+    frame. Terminal results also have a separate, once-written fallback file.
+    """
+    encoded = json.dumps(data, ensure_ascii=False)
+
+    def publish(destination):
+        temporary = None
+        try:
+            fd, temporary = tempfile.mkstemp(
+                prefix=os.path.basename(destination) + '.', suffix='.tmp',
+                dir=os.path.dirname(os.path.abspath(destination)),
+            )
+            with os.fdopen(fd, 'w', encoding='utf-8') as stream:
+                stream.write(encoded)
+            for attempt in range(12):
+                try:
+                    os.replace(temporary, destination)
+                    temporary = None
+                    return True
+                except OSError as error:
+                    retryable = isinstance(error, PermissionError) or getattr(error, 'winerror', None) in {5, 32, 33}
+                    if not retryable or attempt == 11:
+                        return False
+                    time.sleep(0.008 * (attempt + 1))
+            return False
+        except OSError:
+            return False
+        finally:
+            if temporary:
+                try:
+                    os.unlink(temporary)
+                except OSError:
+                    pass
+
+    success = publish(path)
+    if data.get('status') in {'done', 'error'}:
+        # Prefer this terminal snapshot in the poller. The active reader of the
+        # old progress path cannot lock this separate destination.
+        terminal = publish(path + '.final.json')
+        success = success or terminal
+    if not success:
+        print('[aidea_bridge] Progress snapshot temporarily unavailable; translation continues.', file=sys.stderr, flush=True)
+    return success
 
 
 def make_progress(status, progress=0, message="", **kwargs):
@@ -153,6 +198,67 @@ TRANSLATION_STATS_RE = re.compile(
     r"Total:\s*(\d+),\s*Successful:\s*(\d+),\s*Fallback:\s*(\d+)",
     re.IGNORECASE,
 )
+
+
+"""Structured engine counters and quiet-process heartbeats for the bridge."""
+import math
+import queue
+
+
+def translation_limits(task, model_id):
+    qps = max(1, int(task.get('qps', 10) or 1))
+    workers = max(1, int(task.get('poolMaxWorker', 1) or 1))
+    proxy = task.get('oauthProxy') or {}
+    upstream = urllib.parse.urlsplit(str(proxy.get('apiBase', '')))
+    local = upstream.hostname in {'127.0.0.1', 'localhost', '::1'} and model_id.lower().startswith('gemini-')
+    return (1, 1, True) if local else (qps, workers, False)
+
+
+def parse_engine_progress(line):
+    prefix = 'AIDEA_PROGRESS '
+    if not str(line).startswith(prefix):
+        return None
+    try:
+        event = json.loads(line[len(prefix):])
+        if not isinstance(event, dict) or event.get('type') not in {'progress_start', 'progress_update', 'progress_end'}:
+            return None
+        overall = event.get('overall_progress')
+        if isinstance(overall, bool) or not isinstance(overall, (int, float)) or not math.isfinite(overall) or not 0 <= overall <= 100:
+            return None
+        name = str(event.get('stage') or 'Processing')[:160]
+        result = {'stageName': name, 'overallProgress': overall, 'progressSource': 'engine', 'engineEvent': event['type'],
+                  'stage': 'translating' if re.search(r'translat|terminolog|glossar', name, re.I) else 'processing'}
+        current, total = event.get('stage_current'), event.get('stage_total')
+        if (type(current) is int and type(total) is int and 0 <= current <= total and total > 0):
+            result.update(unitCurrent=current, unitTotal=total, stageProgress=current * 100 / total)
+        return result
+    except (ValueError, TypeError):
+        return None
+
+
+def iter_engine_lines(proc, heartbeat):
+    """Read pipes without blocking liveness reporting while an LLM is thinking."""
+    lines = queue.Queue(maxsize=256)
+
+    def read():
+        try:
+            for line in proc.stdout:
+                lines.put(line)
+        finally:
+            lines.put(None)
+
+    reader = threading.Thread(target=read, daemon=True, name='aidea-engine-output')
+    reader.start()
+    while True:
+        try:
+            line = lines.get(timeout=1)
+        except queue.Empty:
+            heartbeat()
+            continue
+        if line is None:
+            break
+        yield line
+    reader.join(timeout=1)
 
 
 def parse_progress(line):
@@ -2507,8 +2613,7 @@ def main():
     model_id = str(task.get("modelId", "") or "").strip()
     source_lang = task.get("sourceLang", "en")
     target_lang = task.get("targetLang", "zh-CN")
-    qps = task.get("qps", 10)
-    pool_max_worker = int(task.get("poolMaxWorker", 1) or 1)
+    qps, pool_max_worker, local_gemini = translation_limits(task, model_id)
     no_dual = _as_bool(task.get("noDual", False))
     no_mono = _as_bool(task.get("noMono", False))
     no_watermark = _as_bool(task.get("noWatermark", True), True)
@@ -2667,8 +2772,11 @@ def main():
             cmd.extend(["--primary-font-family", font_family])
         if selected_pages_spec:
             cmd.extend(["--pages", selected_pages_spec])
-        if pool_max_worker and pool_max_worker > 1:
-            cmd.extend(["--pool-max-worker", str(pool_max_worker)])
+        if pool_max_worker and pool_max_worker >= 1:
+            cmd.extend(["--pool-max-workers", str(pool_max_worker)])
+        if local_gemini:
+            cmd.extend(["--term-qps", "1", "--term-pool-max-workers", "1"])
+            log_line("Local Gemini: translation and glossary workers limited to one; QPS=1")
         log_line("Command: " + " ".join(cmd))
 
         # ── Phased progress mapping ──
@@ -2705,7 +2813,7 @@ def main():
             sys.exit(1)
 
         last_raw_pct = 0   # raw page-level pct from stdout (0-100)
-        last_pct = PHASE_TRANSLATE_START  # mapped overall pct
+        last_pct = 5  # No invented translation progress before engine events.
         last_current = None
         last_total = None
         tail_lines = deque(maxlen=80)
@@ -2728,8 +2836,31 @@ def main():
                 raw_pct * (PHASE_TRANSLATE_END - PHASE_TRANSLATE_START) / 100
             )
 
-        for line in proc.stdout:
+        structured_progress_seen = False
+        last_engine_state = {"stage": "initializing", "stageName": "准备引擎与资源", "progressSource": "preparing", "engineUpdatedAt": 0}
+        last_heartbeat = 0
+
+        def engine_heartbeat():
+            nonlocal last_heartbeat
+            now = time.time()
+            if now - last_heartbeat >= 5 and proc.poll() is None:
+                write_progress(progress_file, make_progress("running", last_pct, last_engine_state.get("stageName", "Processing..."),
+                    heartbeatOnly=True, heartbeatAt=int(now * 1000), **last_engine_state))
+                last_heartbeat = now
+
+        for line in iter_engine_lines(proc, engine_heartbeat):
             line = line.rstrip()
+            engine_event = parse_engine_progress(line)
+            if engine_event:
+                structured_progress_seen = True
+                last_pct = max(last_pct, min(95, 10 + engine_event["overallProgress"] * 0.85))
+                stage_changed = last_engine_state.get("stageName") != engine_event["stageName"]
+                last_engine_state = {**engine_event, "engineUpdatedAt": int(time.time() * 1000)}
+                if stage_changed or engine_event["engineEvent"] == "progress_end" or time.time() - last_write_time >= 0.5:
+                    write_progress(progress_file, make_progress("running", last_pct, engine_event["stageName"], **last_engine_state))
+                    last_write_time = time.time()
+                log_line(line)
+                continue
             if not line:
                 continue
 
@@ -2773,7 +2904,7 @@ def main():
                 continue
 
             # Parse page progress (e.g. "4/14")
-            result = parse_progress(line)
+            result = parse_progress(line) if not structured_progress_seen and re.search(r"\bpages?\b", line, re.I) else None
             if result:
                 current, total, raw_pct = result
                 if raw_pct > last_raw_pct:
@@ -2807,11 +2938,13 @@ def main():
                     elif last_raw_pct > 0:
                         keep_msg = f"Translating... {last_raw_pct}%"
                     else:
-                        keep_msg = "Processing..."
+                        keep_msg = last_engine_state.get("stageName", "Preparing resources...")
+                        if not structured_progress_seen and re.search(r"download|warmup|assets|font", line, re.I):
+                            last_engine_state.update(stage="resources", stageName="准备版面模型与字体资源")
                     write_progress(progress_file, make_progress(
                         "running", last_pct, keep_msg,
                         detail=detail_text,
-                        stage="translating",
+                        **last_engine_state,
                     ))
                     last_write_time = now
 

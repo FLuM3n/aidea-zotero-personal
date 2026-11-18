@@ -6,3 +6,6 @@ plugin/** -text
 *.woff2 binary
 *.ttf binary
 *.pyc binary
+
+# Unified diff context intentionally contains space-only lines.
+patches/*.patch -whitespace

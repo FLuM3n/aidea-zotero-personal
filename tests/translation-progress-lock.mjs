@@ -1,0 +1,20 @@
+import fs from 'node:fs/promises';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const source=await fs.readFile(new URL('../plugin/content/scripts/aidea.js',import.meta.url),'utf8');
+const start=source.indexOf('  var DEFAULT_INTERVAL_MS, ProgressPoller;');
+const end=source.indexOf('  // src/modules/pdfTranslator/',start+50);
+assert(start>=0&&end>start);
+let files={'progress.json':JSON.stringify({status:'running',progress:11})};
+const events=[];
+const runtime=vm.createContext({__esm:definition=>()=>Object.values(definition)[0](),setInterval:()=>1,clearInterval:()=>{},
+  IOUtils:{exists:async path=>path in files,readUTF8:async path=>files[path]}});
+vm.runInContext(source.slice(start,end),runtime);
+vm.runInContext('init_progressPoller(); globalThis.Poller=ProgressPoller;',runtime);
+const poller=new runtime.Poller('progress.json',data=>events.push(data));
+await poller.tick();assert.equal(events.at(-1).progress,11);
+files['progress.json.final.json']=JSON.stringify({status:'done',progress:100,outputFiles:['translated.pdf']});
+await poller.tick();assert.equal(events.at(-1).status,'done');
+assert.equal(events.at(-1).progress,100);assert(!poller.running);
+assert(!source.includes('Process failed to start: ${exe}'));
+console.log('Passed terminal snapshot preference over locked/stale progress and accurate process-failure wording.');

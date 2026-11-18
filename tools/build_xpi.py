@@ -5,7 +5,9 @@ import hashlib,json,zipfile
 root=Path(__file__).resolve().parents[1]
 source=root/'plugin'
 manifest=json.loads((source/'manifest.json').read_text(encoding='utf-8'))
-target=root/'build'/f"AIdea-{manifest['version']}-gemini-web.xpi"
+release=json.loads((root/'release.json').read_text(encoding='utf-8'))
+assert manifest['version']==release['version']
+target=root/'build'/release['filename']
 target.parent.mkdir(exist_ok=True)
 with zipfile.ZipFile(target,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as archive:
     for file in sorted(source.rglob('*')):

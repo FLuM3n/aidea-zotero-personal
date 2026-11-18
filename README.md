@@ -1,53 +1,68 @@
 # AIdea — Zotero 个人定制版
 
-当前版本 **3.6.1.11**。基于 [Visterainer/aidea-zotero](https://github.com/Visterainer/aidea-zotero) 3.6.1，保留原作者署名与 AGPL-3.0-or-later 许可。
+当前版本 **3.6.1.16**。基于 [Visterainer/aidea-zotero](https://github.com/Visterainer/aidea-zotero) 3.6.1，保留原作者署名与 AGPL-3.0-or-later 许可。
 
-这是用于 Windows 与 Mac 安装同一版本的公开仓库。各设备在本机填写自己的账号和 API 配置。
+这是用于 Windows 与 Mac 安装同一插件版本的公开仓库。各设备在本机填写自己的账号和 API 配置。
 
-## Mac 上安装
+## 安装或更新
 
-1. 打开本仓库的 [Releases](https://github.com/FLuM3n/aidea-zotero-personal/releases/latest)。
-2. 下载 **AIdea-3.6.1.11-gemini-web.xpi** 安装包。请下载附件中的 XPI，不要下载 Source code 压缩包，也不要解压 XPI。
+1. 打开 [最新 Release](https://github.com/FLuM3n/aidea-zotero-personal/releases/latest)。
+2. 下载 **AIdea-3.6.1.16-progress-lock.xpi**。下载 Release 附件里的 XPI，不要下载 Source code 压缩包，也不要解压 XPI。
 3. 在 Zotero 的“工具 → 插件”（部分版本叫“附加组件”）中，点击齿轮菜单，选择“从文件安装插件”，选中下载的 XPI。
-4. 完全退出并重新打开 Zotero，在 AIdea 设置里填入自己的 API 地址、模型和 Key。
+4. 完全退出并重新打开 Zotero。已有环境和账号配置可继续使用；第一次使用的设备需要单独配置。
 
-本仓库不保存你的 API Key、聊天记录或文献。Windows 上的配置不会因为安装插件自动复制到 Mac。论文文件仍需由 Zotero/OneDrive 等原有方式同步。
+也可从 [downloads](downloads/) 目录下载当前安装包。本仓库不保存 API Key、网页登录会话、聊天数据库或论文文件。安装插件不会把 Windows 的配置、文献或登录状态复制到 Mac。
 
-找不到 Release 时，也可在仓库 [downloads](downloads/) 目录打开安装包并点击 Download raw file。
+## 3.6.1.12–3.6.1.16 的更新
+
+- 多个 `cite` 来源标记可分别点击，支持跳转 PDF 页并在能匹配原句时临时高亮。
+- Zotero 条目同步版本变化不会再把未改变的 PDF 误判成不同文件；实际文件变化仍会校验。
+- 自定义供应商“保存勾选模型”同时更新菜单显示名单，同名模型可在不同供应商分组分别使用各自接口。
+- 全文翻译安装环境时一并约束 `bitstring==4.3.1`，并实际导入引擎后才报告就绪。
+- 翻译进度接收 BabelDOC 的结构化阶段和完成数量；不足以估算时显示“估算中”，不再用固定10%推算不断增长的剩余时间。
+- 本地 Gemini 的正文与术语提取限制为单任务，修复“并发为1”设置未传入引擎的问题。
+- Windows 短暂锁住进度文件时自动重试，跳过一帧进度不会终止翻译；最终结果有独立快照。
+- 修正翻译过程中异常退出被误报为“启动失败”的提示。
+
+早期定制功能仍保留：全文文字上下文、一键扫描当前页、图片同排状态、划词直接翻译、国内供应商预设及历史对话布局。详见 [全文阅读说明](docs/全文阅读说明.md)。全文指 PDF 可提取文字，补充文件需要另行添加；图片仍需按需扫描。全文输入会增加模型用量。
 
 ## Gemini 网页版本地服务
 
-安装插件后，在自定义 API 预设中选择 **Gemini 网页版（本地）**。它连接单独运行的 `gemini-web-api` 服务，默认地址 `http://127.0.0.1:8100/v1/`，默认模型 `gemini-3.8-flash`。该服务需要使用者自行安装、运行并登录 Gemini 网页账号。
+在自定义 API 预设中选择 **Gemini 网页版（本地）**，默认地址为 `http://127.0.0.1:8100/v1/`。需要单独运行与该接口兼容的 Gemini 网页服务并自行登录。点击获取模型列表，选择账号实际可用的模型；预设名称不在列表中时，请按真实列表选择。
 
-Key 栏只填写本地服务配置的访问 Key，服务未设置访问 Key 时可留空。模型以本地服务和网页账号实际支持的列表为准。图片输入需要服务的 webapi 后端可用。默认按128K上下文预算准备请求，支持手动调整，实际长文本能力须按账号验证。
+Key 栏只填写本地服务设置的访问 Key，服务未设置时可留空。默认按128K上下文预算准备请求，支持手动调整，实际能力以服务和账号为准。
 
-## 本版功能
+插件可在 Windows/Mac 安装，但本地服务也必须在对应电脑运行。另一台 Windows 电脑上的 `127.0.0.1` 服务不能直接被 Mac 调用。该仓库仅发布 Zotero 插件，不打包本机 Gemini 终端及其登录缓存。
 
-- PDF 对话每轮以文件全部已提取文字为基础；提到图号或页码，不再只提供图注。
-- 先为全文预留容量，再放入对话历史；全文确实超出模型容量时明确提示，不静默删成摘录。
-- 扫把旁一键扫描当前 PDF 页，PDF 名称同排显示扫描状态。
-- 扫描图片作为普通上下文加入，不设图片优先级。
-- 划词直接翻译选中文字，取消后台全文预热与冷启动缓存依赖。
-- 加入 Gemini 网页版本地服务预设。
-- 保留国内供应商配置、历史对话布局及扫描兼容修复。
+使用 Gemini 网页服务时，如果回答出现空 `[]`，需要服务端兼容插件的引用标记；仅更新 XPI 无法恢复已经丢失的来源编号。
 
-详见 [全文阅读说明](docs/全文阅读说明.md)。全文指 PDF 可提取文字，独立补充文件需要另行添加；图片仍需按需扫描。全文输入会增加 token 用量。
+## 验证与重建
 
-## 文件与重建
+- `downloads/`：可直接安装的 XPI 与校验值。
+- `plugin/`：当前安装包的完整内容。
+- `upstream-source/`：原版 3.6.1 TypeScript 快照，用于溯源；当前定制以 `plugin/` 和补丁为准。
+- `changes/`、`patches/`：定制辅助代码与修改差异。
+- `tests/`、`verification/`：回归检查和验证范围。
 
-- `downloads/`：当前可安装 XPI，Windows/Mac 共用。
-- `plugin/`：当前安装包的完整文件内容。
-- `upstream-source/`：原版 3.6.1 TypeScript 源码快照，用于溯源；不是已经修改完成的 3.6.1.11 TS 工程。
-- `changes/`：当前定制辅助模块。
-- `patches/`：从原版 XPI 到当前版本的完整修改差异。
-- `verification/`：本地测试记录。
+用 Python 3 重建：`python tools/build_xpi.py`。验证发布包：`python tools/verify_package.py`。重建包的内容也可通过验证脚本检查；ZIP 容器的字节校验值可能因打包方式而不同。
 
-用 Python 3 重建：`python tools/build_xpi.py`。验证已发布安装包：`python tools/verify_package.py`。
+当前发布包 SHA-256：`7b29dd2f2ef3775cf4681bc190180adfd2e6941a9f0d1f2a03dd656b67ed5c7e`。
 
-当前下载包 SHA-256：`ef152ef07f3dff99bacf961e5d2f139a08c4c2e515b2767b05d2b73ad520d3c4`。
+无需调用模型的检查：
 
-全文完整性、请求预算、扫描及图片请求结构检查已通过。测试没有调用付费 API，也不代表已在 Mac 的实际 Zotero 环境完成验证。
+```text
+node tests/selection-translation.mjs
+node tests/gemini-web.mjs
+node tests/provider-selection.mjs
+node tests/citations.mjs
+node tests/citation-revision.mjs
+node tests/translation-progress.mjs
+node tests/translation-progress-lock.mjs
+python -m unittest discover -s tests -p "test_translation*.py"
+```
+
+Windows 文件锁测试会在 Windows 上实际制造读取锁。BabelDOC 原生回调和完整离线模拟链路测试需要先设置环境变量 `AIDEA_TRANSLATE_PYTHON`，指向本机已安装翻译环境的 Python。这些测试不会发送模型请求，不会翻译个人文献。
+
+验证不代表已在 Mac 的实际 Zotero 环境完成测试，也不代表整篇真实文献的所有翻译阶段均已验证。首次翻译可能需要准备字体和版面模型，网页模型逐段响应也可能较慢。
 
 当前安装包保留原作者的插件更新地址；以后升级前请确认目标版本包含个人定制功能。
-
-开发验证可运行 `node tests/selection-translation.mjs` 和 `node tests/gemini-web.mjs`，这些检查不调用真实模型。

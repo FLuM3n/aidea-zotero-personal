@@ -1,0 +1,17 @@
+{
+  "version": "3.6.1.16",
+  "checks": [
+    "model-selection endpoint isolation",
+    "multi-source citation links and PDF highlight",
+    "legacy revision tolerance with file-change rejection",
+    "conda and uv dependency pinning",
+    "runtime import validation",
+    "BabelDOC native progress callbacks",
+    "offline bridge pipeline to PDF and 100 percent",
+    "ETA and heartbeat behavior",
+    "native Windows read-lock recovery and terminal fallback"
+  ],
+  "modelRequestsForTheseChecks": 0,
+  "actualUserDocumentTranslated": false,
+  "liveMacZoteroTest": false
+}
